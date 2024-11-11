@@ -13,5 +13,8 @@ inbox_path.mkdir(parents=True, exist_ok=True)
 permission = SyftPermission.mine_with_public_write(email=client_config.email)
 permission.save(path=inbox_path)
 
-# Create a symlink called "approved" pointing to the apps folder
-apps_path.symlink_to(inbox_path / "approved")
+# Create a symlink called "approved" pointing to the apps folder, overwriting it if it already exists
+symlink_path = inbox_path / "approved"
+if symlink_path.exists():
+    symlink_path.unlink()
+symlink_path.symlink_to(apps_path)
