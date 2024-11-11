@@ -1,5 +1,6 @@
-from syftbox.lib import Client
-from syftbox.lib import SyftPermission
+import os
+
+from syftbox.lib import Client, SyftPermission
 
 client_config = Client.load()
 
@@ -11,10 +12,11 @@ inbox_path.mkdir(parents=True, exist_ok=True)
 
 # Make it globally writeable
 permission = SyftPermission.mine_with_public_write(email=client_config.email)
-permission.save(path=inbox_path)
+permission.ensure(path=inbox_path)
 
 # Create a symlink called "approved" pointing to the apps folder, overwriting it if it already exists
 symlink_path = inbox_path / "approved"
-if symlink_path.exists():
-    symlink_path.unlink()
-symlink_path.symlink_to(apps_path)
+if not symlink_path.exists() or not os.path.islink(symlink_path):
+    if symlink_path.exists():
+        os.unlink(symlink_path)
+    symlink_path.symlink_to(apps_path)
