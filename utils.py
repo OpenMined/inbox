@@ -109,3 +109,43 @@ def start_garbage_collector(trash_path: Path) -> None:
             shutil.rmtree(str(item.absolute()))
         else:
             os.remove(item)
+
+
+def start_broadcast_service(
+    broadcast_dir_path: Path,
+    broadcast_symlink_path: Path,
+    datasites_path: Path,
+    my_datasite_path: Path,
+) -> None:
+    print(
+        f"Monitoring {broadcast_symlink_path} for new API requests. Please drop "
+        "your app directory containing the API requests into this folder."
+    )
+
+    valid_api_requests = [d for d in broadcast_dir_path.iterdir() if is_app(d)]
+
+    if len(valid_api_requests) == 0:
+        print(f"Nothing to broadcast in {broadcast_symlink_path}")
+        return
+
+    datasites_with_inbox = [
+        d
+        for d in datasites_path.iterdir()
+        if (d / "public" / "inbox").exists() and d != my_datasite_path
+    ]
+    if len(datasites_with_inbox) == 0:
+        print("No datasites with an inbox found.")
+        return
+
+    print(
+        f"Found {len(valid_api_requests)} new API requests to broadcast to {len(datasites_with_inbox)} datasites."
+    )
+
+    for api_request in valid_api_requests:
+        for datasite in datasites_with_inbox:
+            # Copy the api_request to the datasite's inbox
+            target_path = datasite / "public" / "inbox" / api_request.name
+            shutil.copytree(api_request, target_path)
+            print(f"Broadcasted '{api_request.name}' to '{datasite.name}'")
+        # Remove the api_request from the broadcast folder
+        shutil.rmtree(api_request)
