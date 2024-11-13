@@ -1,22 +1,30 @@
-import os
-
 from syftbox.lib import Client, SyftPermission
+from utils import create_symlink
+from utils import start_notification_service
 
 client_config = Client.load()
 
-inbox_path = client_config.datasites / client_config.email / "public/inbox/"
-apps_path = client_config.workspace.apps
+my_inbox_path = client_config.my_datasite / "public/inbox/"
+my_apps_path = client_config.workspace.apps
+appdata_path = client_config.appdata("inbox")
+trash_path = appdata_path / ".trash"
 
-# Create the inbox folder
-inbox_path.mkdir(parents=True, exist_ok=True)
+approved_symlink_path = my_inbox_path / "approved"
+rejected_symplink_path = my_inbox_path / "rejected"
 
-# Make it globally writeable
+# Create the necessary directories
+client_config.makedirs(my_inbox_path, trash_path)
+
+# Make the inbox path globally writeable
 permission = SyftPermission.mine_with_public_write(email=client_config.email)
-permission.ensure(path=inbox_path)
+permission.ensure(path=my_inbox_path)
 
-# Create a symlink called "approved" pointing to the apps folder, overwriting it if it already exists
-symlink_path = inbox_path / "approved"
-if not symlink_path.exists() or not os.path.islink(symlink_path):
-    if symlink_path.exists():
-        os.unlink(symlink_path)
-    symlink_path.symlink_to(apps_path)
+# Create a symlink called "approved" pointing to the apps folder
+create_symlink(my_apps_path, approved_symlink_path, overwrite=True)
+
+# Create a symlink called "rejected" pointing to the trash folder
+create_symlink(trash_path, rejected_symplink_path, overwrite=True)
+
+# TODO periodically clean trash directory
+
+start_notification_service(my_inbox_path, appdata_path)
