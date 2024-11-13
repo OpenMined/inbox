@@ -13,6 +13,10 @@ def create_symlink(target_path: Path, symlink_path: Path, overwrite=False) -> No
     symlink_path.symlink_to(target_path)
 
 
+def is_app(path: Path) -> bool:
+    return path.is_dir() and "run.sh" in [f.name for f in path.iterdir()]
+
+
 def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> None:
     if len(api_requests) == 0:
         return
@@ -45,7 +49,7 @@ def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> N
 def get_pending_api_requests(inbox_path: Path) -> list:
     ignore = [".DS_Store", "rejected", "_.syftperm", "approved"]
     pending_api_requests = [
-        d.name for d in inbox_path.iterdir() if d.name not in ignore and d.is_dir()
+        d.name for d in inbox_path.iterdir() if d.name not in ignore and is_app(d)
     ]
     return pending_api_requests
 
@@ -90,10 +94,18 @@ def start_garbage_collector(trash_path: Path) -> None:
     print(f"Watching {trash_path} for rejected api requests...")
     if not trash_path.exists():
         return
-    deletables = sorted([d for d in trash_path.iterdir()], key=lambda d: d.name)
-    if len(deletables) > 0:
+    rejected_apps_list = sorted(
+        [d for d in trash_path.iterdir() if is_app(d)], key=lambda d: d.name
+    )
+    if len(rejected_apps_list) > 0:
         print(
-            f"Found {len(deletables)} rejected api requests: {", ".join([d.name for d in deletables])}. Deleting..."
+            f"Found {len(rejected_apps_list)} rejected api requests:"
+            f" {", ".join([d.name for d in rejected_apps_list])}. Deleting..."
         )
-        for deletable in deletables:
-            shutil.rmtree(str(deletable.absolute()))
+    for item in trash_path.iterdir():
+        if os.path.islink(item):
+            os.unlink(item)
+        elif item.is_dir():
+            shutil.rmtree(str(item.absolute()))
+        else:
+            os.remove(item)
