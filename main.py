@@ -7,7 +7,7 @@ from utils import start_notification_service
 
 client_config = Client.load()
 
-my_inbox_path = client_config.my_datasite / "public/inbox/"
+my_inbox_path = client_config.my_datasite / "inbox/"
 my_apps_path = client_config.workspace.apps
 appdata_path = client_config.appdata("inbox")
 trash_path = appdata_path / ".trash"

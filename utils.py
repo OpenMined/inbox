@@ -1,7 +1,52 @@
+from constants import TRASH_RETENTION_DAYS
+from datetime import datetime
+from datetime import timedelta
 import json
 import os
-import shutil
 from pathlib import Path
+import shutil
+
+
+def human_friendly_join(
+    items: list[str], sep: str = ", ", last_sep: str = " and "
+) -> str:
+    """Joins a list of strings into a single string with specified separators.
+
+    This function concatenates the elements of a list into a single string.
+    Elements are separated by `sep`, except for the last two elements which
+    are separated by `last_sep`.
+
+    Parameters
+    ----------
+    items : list[str]
+        The list of strings to join.
+    sep : str, optional
+        The separator between all elements except the last two, by default ", "
+    last_sep : str, optional
+        The separator between the last two elements, by default " and "
+
+    Returns
+    -------
+    str
+        The concatenated string.
+
+    Examples
+    --------
+    >>> human_friendly_join(["apple", "banana", "cherry"])
+    'apple, banana and cherry'
+    >>> human_friendly_join(["red", "yellow", "green]), sep="; ", last_sep=" or ")
+    'red; yellow or green'
+    >>> human_friendly_join(["one"])
+    'one'
+    >>> human_friendly_join([])
+    ''
+    """
+    if not items:
+        return ""
+    elif len(items) == 1:
+        return items[0]
+    else:
+        return sep.join(items[:-1]) + last_sep + items[-1]
 
 
 def create_symlink(target_path: Path, symlink_path: Path, overwrite=False) -> None:
@@ -20,30 +65,22 @@ def is_app(path: Path) -> bool:
 def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> None:
     if len(api_requests) == 0:
         return
-    elif len(api_requests) == 1:
+
+    for api_request in api_requests:
         title = "New API Request"
-        subtitle = api_requests[0]
         message = (
-            f"A new API request has been received: '{api_requests[0]}'."
-            " Please review it and move it to the 'approved' or 'rejected' folder."
+            f"A new API request has been received: '{api_request}'."
+            " Please review the code and move it to the 'approved' or 'rejected' folder."
         )
-    elif len(api_requests) > 1:
-        title = "Multiple New API Requests"
-        subtitle = f"{api_requests[0]} and {len(api_requests) - 1} more..."
-        message = (
-            f"You have received {len(api_requests)} new API requests. Please review"
-            " them and move each to the 'approved' or 'rejected' folder."
+        os.system(
+            "./terminal-notifier.app/Contents/MacOS/terminal-notifier"
+            f" -title '{title}'"
+            f" -subtitle '{api_request}'"
+            f" -message '{message}'"
+            f" -contentImage './icon.png'"
+            f" -open file://{inbox_path.absolute()}"
+            " -ignoreDnd"
         )
-    # os.system(f'osascript -e \'display notification "{message}" with title "{title}"\'')
-    os.system(
-        "./terminal-notifier.app/Contents/MacOS/terminal-notifier"
-        f" -title '{title}'"
-        f" -subtitle '{subtitle}'"
-        f" -message '{message}'"
-        f" -contentImage './icon.png'"
-        f" -open file://{inbox_path.absolute()}"
-        " -ignoreDnd"
-    )
 
 
 def get_pending_api_requests(inbox_path: Path) -> list:
@@ -85,7 +122,7 @@ def start_notification_service(inbox_path: Path, appdata_path: Path) -> None:
             set(current_pending_api_requests) - set(previous_pending_api_requests)
         )
         if len(new_api_requests) > 0:
-            print(f"New API requests: {", ".join(new_api_requests)}")
+            print(f"New API requests received: {human_friendly_join(new_api_requests)}")
         save_inbox_state(inbox_path, appdata_path)
         create_api_request_notifications(*new_api_requests, inbox_path=inbox_path)
 
@@ -94,15 +131,24 @@ def start_garbage_collector(trash_path: Path) -> None:
     print(f"Watching {trash_path} for rejected api requests...")
     if not trash_path.exists():
         return
-    rejected_apps_list = sorted(
-        [d for d in trash_path.iterdir() if is_app(d)], key=lambda d: d.name
+    seven_days_ago = datetime.now() - timedelta(days=TRASH_RETENTION_DAYS)
+    apps_to_delete = sorted(
+        [
+            d
+            for d in trash_path.iterdir()
+            if is_app(d) and d.stat().st_ctime < seven_days_ago.timestamp()
+        ],
+        key=lambda d: d.name,
     )
-    if len(rejected_apps_list) > 0:
+
+    if len(apps_to_delete) > 0:
+        name_of_apps_to_delete = human_friendly_join([d.name for d in apps_to_delete])
         print(
-            f"Found {len(rejected_apps_list)} rejected api requests:"
-            f" {", ".join([d.name for d in rejected_apps_list])}. Deleting..."
+            f"Found {len(apps_to_delete)} rejected API requests older than {TRASH_RETENTION_DAYS} days:"
+            f" {name_of_apps_to_delete}. Deleting..."
         )
-    for item in trash_path.iterdir():
+
+    for item in apps_to_delete:
         if os.path.islink(item):
             os.unlink(item)
         elif item.is_dir():
@@ -131,7 +177,7 @@ def start_broadcast_service(
     datasites_with_inbox = [
         d
         for d in datasites_path.iterdir()
-        if (d / "public" / "inbox").exists() and d != my_datasite_path
+        if (d / "inbox").exists() and d != my_datasite_path
     ]
     if len(datasites_with_inbox) == 0:
         print("No datasites with an inbox found.")
@@ -144,8 +190,8 @@ def start_broadcast_service(
     for api_request in valid_api_requests:
         for datasite in datasites_with_inbox:
             # Copy the api_request to the datasite's inbox
-            target_path = datasite / "public" / "inbox" / api_request.name
-            shutil.copytree(api_request, target_path)
+            target_path = datasite / "inbox" / api_request.name
+            shutil.copytree(api_request, target_path, dirs_exist_ok=True)
             print(f"Broadcasted '{api_request.name}' to '{datasite.name}'")
         # Remove the api_request from the broadcast folder
         shutil.rmtree(api_request)
