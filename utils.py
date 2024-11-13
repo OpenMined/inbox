@@ -14,7 +14,6 @@ def create_symlink(target_path: Path, symlink_path: Path, overwrite=False) -> No
 
 
 def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> None:
-    api_requests = sorted(api_requests)
     if len(api_requests) == 0:
         return
     elif len(api_requests) == 1:
@@ -77,10 +76,24 @@ def start_notification_service(inbox_path: Path, appdata_path: Path) -> None:
         "pending_api_requests"
     ]
     current_pending_api_requests = get_pending_api_requests(inbox_path)
-    new_api_requests = set(current_pending_api_requests) - set(
-        previous_pending_api_requests
-    )
-    if len(new_api_requests) > 0:
-        print(f"New API requests: {new_api_requests}")
-    save_inbox_state(inbox_path, appdata_path)
-    create_api_request_notifications(*new_api_requests, inbox_path=inbox_path)
+    if previous_pending_api_requests != current_pending_api_requests:
+        new_api_requests = sorted(
+            set(current_pending_api_requests) - set(previous_pending_api_requests)
+        )
+        if len(new_api_requests) > 0:
+            print(f"New API requests: {", ".join(new_api_requests)}")
+        save_inbox_state(inbox_path, appdata_path)
+        create_api_request_notifications(*new_api_requests, inbox_path=inbox_path)
+
+
+def start_garbage_collector(trash_path: Path) -> None:
+    print(f"Watching {trash_path} for rejected api requests...")
+    if not trash_path.exists():
+        return
+    deletables = sorted([d for d in trash_path.iterdir()], key=lambda d: d.name)
+    if len(deletables) > 0:
+        print(
+            f"Found {len(deletables)} rejected api requests: {", ".join([d.name for d in deletables])}. Deleting..."
+        )
+        for deletable in deletables:
+            shutil.rmtree(str(deletable.absolute()))

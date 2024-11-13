@@ -1,5 +1,6 @@
 from syftbox.lib import Client, SyftPermission
 from utils import create_symlink
+from utils import start_garbage_collector
 from utils import start_notification_service
 
 client_config = Client.load()
@@ -25,6 +26,5 @@ create_symlink(my_apps_path, approved_symlink_path, overwrite=True)
 # Create a symlink called "rejected" pointing to the trash folder
 create_symlink(trash_path, rejected_symplink_path, overwrite=True)
 
-# TODO periodically clean trash directory
-
 start_notification_service(my_inbox_path, appdata_path)
+start_garbage_collector(trash_path)
