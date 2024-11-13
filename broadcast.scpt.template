@@ -45,7 +45,5 @@ on processFolder(folderPath)
 		do shell script "cp -R " & quoted form of folderPOSIXPathWithoutTrailingSlash & " " & quoted form of broadcastDirPath
 
 		display dialog "The API request has been successfully scheduled to broadcast to " & datasitesCount & " " & datasiteLabel &". You can monitor the progress in the SyftBox logs." buttons {"OK"} default button "OK" with title "API Request Broadcasted" with icon note
-	else
-		display dialog "The operation has been canceled." buttons {"OK"} default button "OK" with title "API Request Broadcast Canceled" with icon note
 	end if
 end processFolder
