@@ -1,5 +1,7 @@
-from syftbox.lib import Client, SyftPermission
 from constants import BROADCAST_ENABLED
+from pathlib import Path
+from syftbox.lib import Client, SyftPermission
+from utils import compile_broadcast_app
 from utils import create_symlink
 from utils import start_broadcast_service
 from utils import start_garbage_collector
@@ -29,22 +31,28 @@ create_symlink(my_apps_path, approved_symlink_path, overwrite=True)
 create_symlink(trash_path, rejected_symplink_path, overwrite=True)
 
 start_notification_service(my_inbox_path, appdata_path)
-start_garbage_collector(trash_path)
+start_garbage_collector(trash_path, rejected_symplink_path)
 
 if BROADCAST_ENABLED:
     broadcast_dir_path = appdata_path / ".broadcast"
-    broadcast_symlink_path = client_config.workspace.apps / "broadcast"
+    broadcast_app_path = client_config.workspace.apps / "broadcast.app"
+    app_icon = Path.cwd() / "icon.icns"
 
     # Create the broadcast app at broadcast_dir_path
     client_config.makedirs(broadcast_dir_path)
-    run_sh = broadcast_dir_path / "run.sh"
-    run_sh.touch()  # TODO replace with actual script
 
-    # Create a symlink called "broadcast" in SyftBox/apps, pointing to the broadcast folder
-    create_symlink(broadcast_dir_path, broadcast_symlink_path, overwrite=True)
+    # Compile and add the broadcast app
+    if not broadcast_app_path.exists():
+        compile_broadcast_app(
+            broadcast_app_path,
+            client_config.datasites.absolute(),
+            broadcast_dir_path.absolute(),
+            app_icon.absolute(),
+        )
+
     start_broadcast_service(
         broadcast_dir_path,
-        broadcast_symlink_path,
+        broadcast_app_path,
         client_config.datasites,
         client_config.my_datasite,
     )

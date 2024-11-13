@@ -111,7 +111,7 @@ def save_inbox_state(inbox_path: Path, appdata_path: Path) -> None:
 
 
 def start_notification_service(inbox_path: Path, appdata_path: Path) -> None:
-    print(f"Watching {inbox_path} for new apps...")
+    print(f"Watching {inbox_path} for new API requests...")
 
     previous_pending_api_requests = load_inbox_state(appdata_path)[
         "pending_api_requests"
@@ -127,8 +127,8 @@ def start_notification_service(inbox_path: Path, appdata_path: Path) -> None:
         create_api_request_notifications(*new_api_requests, inbox_path=inbox_path)
 
 
-def start_garbage_collector(trash_path: Path) -> None:
-    print(f"Watching {trash_path} for rejected api requests...")
+def start_garbage_collector(trash_path: Path, trash_symlink_path: Path) -> None:
+    print(f"Watching {trash_symlink_path} for rejected API requests...")
     if not trash_path.exists():
         return
     seven_days_ago = datetime.now() - timedelta(days=TRASH_RETENTION_DAYS)
@@ -157,21 +157,43 @@ def start_garbage_collector(trash_path: Path) -> None:
             os.remove(item)
 
 
+def compile_broadcast_app(
+    output_path: Path, datasite_path: Path, broadcast_dir_path: Path, icon_path: Path
+) -> None:
+    script_template_path = Path(__file__).parent / "broadcast.scpt.template"
+    with open(script_template_path, "r") as f:
+        apple_script = f.read()
+    apple_script = apple_script.replace("{{DATASITE_PATH}}", str(datasite_path))
+    apple_script = apple_script.replace(
+        "{{BROADCAST_DIR_PATH}}", str(broadcast_dir_path)
+    )
+
+    with open("broadcast.scpt", "w") as f:
+        f.write(apple_script)
+
+    compile_command = (
+        f"osacompile -o {output_path} broadcast.scpt > /dev/null 2>&1"
+        f' && echo "Broadcast app compiled to {output_path}"'
+        f' || echo "Failed to compile broadcast app to {output_path}" >&2'
+    )
+    os.system(compile_command)
+    os.remove("broadcast.scpt")
+    os.system(f"cp {icon_path} {output_path/'Contents/Resources/droplet.icns'}")
+    (output_path / "run.sh").touch()
+
+
 def start_broadcast_service(
     broadcast_dir_path: Path,
-    broadcast_symlink_path: Path,
+    broadcast_app_path: Path,
     datasites_path: Path,
     my_datasite_path: Path,
 ) -> None:
-    print(
-        f"Monitoring {broadcast_symlink_path} for new API requests. Please drop "
-        "your app directory containing the API requests into this folder."
-    )
-
     valid_api_requests = [d for d in broadcast_dir_path.iterdir() if is_app(d)]
 
     if len(valid_api_requests) == 0:
-        print(f"Nothing to broadcast in {broadcast_symlink_path}")
+        print(
+            f"No new API requests to broadcast. Please drop your API request folder to {broadcast_app_path}."
+        )
         return
 
     datasites_with_inbox = [

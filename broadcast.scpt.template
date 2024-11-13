@@ -1,0 +1,48 @@
+on run
+	set folderPath to choose folder with prompt "Select a folder containing an API request to broadcast:"
+	processFolder(folderPath)
+end run
+
+on open theFiles
+	if (count theFiles) is not equal to 1 then
+		display dialog "Please drop only one API request folder at a time." buttons {"OK"} default button "OK" with title "API Request Broadcaster"
+		return
+	end if
+
+	set folderPath to item 1 of theFiles
+	processFolder(folderPath)
+end open
+
+on processFolder(folderPath)
+	-- Set variables
+	set datasitePath to "{{DATASITE_PATH}}"
+	set broadcastDirPath to "{{BROADCAST_DIR_PATH}}"
+
+	-- Convert the folder path to POSIX format for shell compatibility
+	set folderPOSIXPath to POSIX path of folderPath
+
+	-- Check if the item is a folder and contains the 'run.sh' file using shell commands
+	set folderCheck to do shell script "if [ -d " & quoted form of folderPOSIXPath & " ] && [ -f " & quoted form of folderPOSIXPath & "/run.sh ]; then echo 'valid'; else echo 'invalid'; fi"
+
+	if folderCheck is not "valid" then
+		display dialog "Invalid API request. Ensure the selected item is a folder containing a 'run.sh' file." buttons {"OK"} default button "OK" with title "API Request Broadcaster"
+		return
+	end if
+
+	-- Get number of datasites with inbox installed
+	set datasitesCount to do shell script "count=0; for d in " & datasitePath & "/*/; do [ -d \"$d/inbox\" ] && ((count++)); done; echo $count"
+	set datasiteLabel to "datasite"
+	if datasitesCount is greater than 1 then set datasiteLabel to "datasites"
+
+	-- Display confirmation dialog
+	set userResponse to display dialog "You are about to broadcast the API request '" & (do shell script "basename " & quoted form of folderPOSIXPath) & "' to " & datasitesCount & " " & datasiteLabel & ". This action is disruptive and will notify multiple users across various locations. Are you sure you want to proceed?" buttons {"Cancel", "Broadcast"} default button "Broadcast" with title "Confirmation Needed" with icon caution
+
+	if button returned of userResponse is "Run" then
+		-- Copy the folder to the broadcastDirPath location
+		do shell script "cp -R " & quoted form of folderPOSIXPath & " " & quoted form of broadcastDirPath
+
+		display dialog "The folder has been copied successfully to " & broadcastDirPath buttons {"OK"} default button "OK" with title "API Request Broadcaster"
+	else
+		display dialog "Operation canceled." buttons {"OK"} default button "OK" with title "API Request Broadcaster"
+	end if
+end processFolder
