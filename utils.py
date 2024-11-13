@@ -158,11 +158,16 @@ def start_garbage_collector(trash_path: Path, trash_symlink_path: Path) -> None:
 
 
 def compile_broadcast_app(
-    output_path: Path, datasite_path: Path, broadcast_dir_path: Path, icon_path: Path
+    output_path: Path,
+    apps_path: Path,
+    datasite_path: Path,
+    broadcast_dir_path: Path,
+    icon_path: Path,
 ) -> None:
     script_template_path = Path(__file__).parent / "broadcast.scpt.template"
     with open(script_template_path, "r") as f:
         apple_script = f.read()
+    apple_script = apple_script.replace("{{APPS_PATH}}", str(apps_path))
     apple_script = apple_script.replace("{{DATASITE_PATH}}", str(datasite_path))
     apple_script = apple_script.replace(
         "{{BROADCAST_DIR_PATH}}", str(broadcast_dir_path)

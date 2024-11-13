@@ -1,5 +1,6 @@
 on run
-	set folderPath to choose folder with prompt "Select a folder containing an API request to broadcast:"
+	set appsDirectory to POSIX file "{{APPS_PATH}}"
+	set folderPath to choose folder with prompt "Select a folder containing an API request to broadcast" default location appsDirectory
 	processFolder(folderPath)
 end run
 

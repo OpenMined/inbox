@@ -45,6 +45,7 @@ if BROADCAST_ENABLED:
     if not broadcast_app_path.exists():
         compile_broadcast_app(
             broadcast_app_path,
+            my_apps_path,
             client_config.datasites.absolute(),
             broadcast_dir_path.absolute(),
             app_icon.absolute(),
