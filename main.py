@@ -11,7 +11,7 @@ client_config = Client.load()
 
 my_inbox_path = client_config.my_datasite / "inbox/"
 my_apps_path = client_config.workspace.apps
-appdata_path = client_config.appdata("inbox")
+appdata_path = client_config.api_data("inbox")
 trash_path = appdata_path / ".trash"
 
 approved_symlink_path = my_inbox_path / "approved"
