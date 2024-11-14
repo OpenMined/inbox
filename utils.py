@@ -58,7 +58,7 @@ def create_symlink(target_path: Path, symlink_path: Path, overwrite=False) -> No
     symlink_path.symlink_to(target_path)
 
 
-def is_app(path: Path) -> bool:
+def is_valid_api_request(path: Path) -> bool:
     return path.is_dir() and "run.sh" in [f.name for f in path.iterdir()]
 
 
@@ -69,13 +69,13 @@ def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> N
     for api_request in api_requests:
         title = "New API Request"
         message = (
-            f"A new API request has been received: '{api_request}'."
+            f'A new API request has been received: "{api_request}".'
             " Please review the code and move it to the 'approved' or 'rejected' folder."
         )
         os.system(
             "./terminal-notifier.app/Contents/MacOS/terminal-notifier"
             f" -title '{title}'"
-            f" -subtitle '{api_request}'"
+            # f" -subtitle '{api_request}'"
             f" -message '{message}'"
             f" -contentImage './icon.png'"
             f" -open file://{inbox_path.absolute()}"
@@ -86,7 +86,9 @@ def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> N
 def get_pending_api_requests(inbox_path: Path) -> list:
     ignore = [".DS_Store", "rejected", "_.syftperm", "approved"]
     pending_api_requests = [
-        d.name for d in inbox_path.iterdir() if d.name not in ignore and is_app(d)
+        d.name
+        for d in inbox_path.iterdir()
+        if d.name not in ignore and is_valid_api_request(d)
     ]
     return pending_api_requests
 
@@ -136,7 +138,8 @@ def start_garbage_collector(trash_path: Path, trash_symlink_path: Path) -> None:
         [
             d
             for d in trash_path.iterdir()
-            if is_app(d) and d.stat().st_ctime < seven_days_ago.timestamp()
+            if is_valid_api_request(d)
+            and d.stat().st_ctime < seven_days_ago.timestamp()
         ],
         key=lambda d: d.name,
     )
@@ -193,7 +196,9 @@ def start_broadcast_service(
     datasites_path: Path,
     my_datasite_path: Path,
 ) -> None:
-    valid_api_requests = [d for d in broadcast_dir_path.iterdir() if is_app(d)]
+    valid_api_requests = [
+        d for d in broadcast_dir_path.iterdir() if is_valid_api_request(d)
+    ]
 
     if len(valid_api_requests) == 0:
         print(
