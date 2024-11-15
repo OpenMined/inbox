@@ -8,11 +8,12 @@ if [ ! -d ".venv" ]; then
 else
     echo "Virtual environment already exists."
 fi
-. .venv/bin/activate
 
 uv pip install -U syftbox
 
+. .venv/bin/activate
+
 echo "Running 'inbox' with $(python3 --version) at '$(which python3)'"
-python3 main.py
+uv run python3 main.py
 
 deactivate

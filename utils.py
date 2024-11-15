@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import platform
 
 
 def human_friendly_join(
@@ -62,6 +63,23 @@ def is_valid_api_request(path: Path) -> bool:
     return path.is_dir() and "run.sh" in [f.name for f in path.iterdir()]
 
 
+def create_api_request_notifications_macos(
+    title: str, message: str, inbox_path: Path
+) -> None:
+    return os.system(
+        "./macos/terminal-notifier.app/Contents/MacOS/terminal-notifier"
+        f" -title '{title}'"
+        f" -message '{message}'"
+        f" -contentImage './assets/icon.png'"
+        f" -open file://{inbox_path.absolute()}"
+        " -ignoreDnd"
+    )
+
+
+def create_api_request_notifications_linux(title: str, message: str) -> None:
+    return os.system(f'notify-send "{title}" "{message}"')
+
+
 def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> None:
     if len(api_requests) == 0:
         return
@@ -72,14 +90,10 @@ def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> N
             f'A new API request has been received: "{api_request}".'
             " Please review the code and move it to the 'approved' or 'rejected' folder."
         )
-        os.system(
-            "./terminal-notifier.app/Contents/MacOS/terminal-notifier"
-            f" -title '{title}'"
-            f" -message '{message}'"
-            f" -contentImage './assets/icon.png'"
-            f" -open file://{inbox_path.absolute()}"
-            " -ignoreDnd"
-        )
+        if platform.system() == "Darwin":
+            create_api_request_notifications_macos(title, message, inbox_path)
+        elif platform.system() == "Linux":
+            create_api_request_notifications_linux(title, message)
 
 
 def get_pending_api_requests(inbox_path: Path) -> list:
@@ -166,25 +180,29 @@ def compile_broadcast_app(
     broadcast_dir_path: Path,
     icon_path: Path,
 ) -> None:
-    script_template_path = Path(__file__).parent / "broadcast.scpt.template"
+    script_dir = Path(__file__).parent / "macos"
+    script_template_path = script_dir / "broadcast.scpt.template"
+    script_path = script_dir / "broadcast.scpt"
+
     with open(script_template_path, "r") as f:
         apple_script = f.read()
+
     apple_script = apple_script.replace("{{APPS_PATH}}", str(apps_path))
     apple_script = apple_script.replace("{{DATASITE_PATH}}", str(datasite_path))
     apple_script = apple_script.replace(
         "{{BROADCAST_DIR_PATH}}", str(broadcast_dir_path)
     )
 
-    with open("broadcast.scpt", "w") as f:
+    with open(script_path, "w") as f:
         f.write(apple_script)
 
     compile_command = (
-        f"osacompile -o {output_path} broadcast.scpt > /dev/null 2>&1"
+        f"osacompile -o {output_path} {script_path} > /dev/null 2>&1"
         f' && echo "Broadcast app compiled to {output_path}"'
         f' || echo "Failed to compile broadcast app to {output_path}" >&2'
     )
     os.system(compile_command)
-    os.remove("broadcast.scpt")
+    os.remove(script_path)
     os.system(f"cp {icon_path} {output_path/'Contents/Resources/droplet.icns'}")
     (output_path / "run.sh").touch()
 
