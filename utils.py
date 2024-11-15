@@ -64,20 +64,28 @@ def is_valid_api_request(path: Path) -> bool:
 
 
 def create_api_request_notifications_macos(
-    title: str, message: str, inbox_path: Path
+    title: str, message: str, inbox_path: Path, icon_path: Path
 ) -> None:
     return os.system(
         "./macos/terminal-notifier.app/Contents/MacOS/terminal-notifier"
         f" -title '{title}'"
         f" -message '{message}'"
-        f" -contentImage './assets/icon.png'"
+        f" -contentImage '{icon_path.absolute()}'"
         f" -open file://{inbox_path.absolute()}"
         " -ignoreDnd"
     )
 
 
-def create_api_request_notifications_linux(title: str, message: str) -> None:
-    return os.system(f'notify-send "{title}" "{message}"')
+def create_api_request_notifications_linux(
+    title: str, message: str, inbox_path: Path, icon_path: Path
+) -> None:
+    return os.system(
+        "./linux/notify-send.sh"
+        f" '{title}' '{message}'"
+        f" --icon '{icon_path.absolute()}'"
+        f" --action 'Show:xdg-open {inbox_path.absolute()}'"
+        f" --default-action 'xdg-open {inbox_path.absolute()}'"
+    )
 
 
 def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> None:
@@ -88,12 +96,17 @@ def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> N
         title = "New API Request"
         message = (
             f'A new API request has been received: "{api_request}".'
-            " Please review the code and move it to the 'approved' or 'rejected' folder."
+            ' Please review the code and move it to the "approved" or "rejected" folder.'
         )
+        icon_path = Path(__file__).parent / "assets" / "icon.png"
         if platform.system() == "Darwin":
-            create_api_request_notifications_macos(title, message, inbox_path)
+            create_api_request_notifications_macos(
+                title, message, inbox_path, icon_path
+            )
         elif platform.system() == "Linux":
-            create_api_request_notifications_linux(title, message)
+            create_api_request_notifications_linux(
+                title, message, inbox_path, icon_path
+            )
 
 
 def get_pending_api_requests(inbox_path: Path) -> list:
