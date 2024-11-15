@@ -76,7 +76,7 @@ def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> N
             "./terminal-notifier.app/Contents/MacOS/terminal-notifier"
             f" -title '{title}'"
             f" -message '{message}'"
-            f" -contentImage './icon.png'"
+            f" -contentImage './assets/icon.png'"
             f" -open file://{inbox_path.absolute()}"
             " -ignoreDnd"
         )

@@ -36,7 +36,7 @@ start_garbage_collector(trash_path, rejected_symplink_path)
 if BROADCAST_ENABLED:
     broadcast_dir_path = api_data_path / ".broadcast"
     broadcast_app_path = client.workspace.apps / "broadcast.app"
-    app_icon = Path.cwd() / "icon.icns"
+    app_icon = Path.cwd() / "assets" / "icon.icns"
 
     # Create the broadcast app at broadcast_dir_path
     client.makedirs(broadcast_dir_path)
