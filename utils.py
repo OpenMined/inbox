@@ -1,11 +1,12 @@
 from constants import TRASH_RETENTION_DAYS
 from datetime import datetime
 from datetime import timedelta
+import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import platform
+import shutil
 
 
 def human_friendly_join(
@@ -186,13 +187,7 @@ def start_garbage_collector(trash_path: Path, trash_symlink_path: Path) -> None:
             os.remove(item)
 
 
-def compile_broadcast_app(
-    output_path: Path,
-    apps_path: Path,
-    datasite_path: Path,
-    broadcast_dir_path: Path,
-    icon_path: Path,
-) -> None:
+def compile_broadcast_app(output_path: Path, datasites_path: Path) -> None:
     script_dir = Path(__file__).parent / "macos"
     script_template_path = script_dir / "broadcast.scpt.template"
     script_path = script_dir / "broadcast.scpt"
@@ -200,11 +195,15 @@ def compile_broadcast_app(
     with open(script_template_path, "r") as f:
         apple_script = f.read()
 
-    apple_script = apple_script.replace("{{APPS_PATH}}", str(apps_path))
-    apple_script = apple_script.replace("{{DATASITE_PATH}}", str(datasite_path))
     apple_script = apple_script.replace(
-        "{{BROADCAST_DIR_PATH}}", str(broadcast_dir_path)
+        "{{DATASITES_PATH}}", str(datasites_path.absolute())
     )
+
+    apple_script_md5 = hashlib.md5(apple_script.encode()).hexdigest()
+    version_hash_path = output_path / "version_hash"
+    if version_hash_path.exists() and version_hash_path.read_text() == apple_script_md5:
+        # No need to recompile
+        return
 
     with open(script_path, "w") as f:
         f.write(apple_script)
@@ -215,45 +214,8 @@ def compile_broadcast_app(
         f' || echo "Failed to compile broadcast app to {output_path}" >&2'
     )
     os.system(compile_command)
+    version_hash_path.write_text(apple_script_md5)
+    icon_path = Path(__file__).parent / "assets" / "icon.icns"
+    shutil.copy(icon_path, output_path / "Contents/Resources/droplet.icns")
+    (output_path / "run.sh").touch()  # to suppress an error message in SyftBox
     os.remove(script_path)
-    os.system(f"cp {icon_path} {output_path/'Contents/Resources/droplet.icns'}")
-    (output_path / "run.sh").touch()
-
-
-def start_broadcast_service(
-    broadcast_dir_path: Path,
-    broadcast_app_path: Path,
-    datasites_path: Path,
-    my_datasite_path: Path,
-) -> None:
-    valid_api_requests = [
-        d for d in broadcast_dir_path.iterdir() if is_valid_api_request(d)
-    ]
-
-    if len(valid_api_requests) == 0:
-        print(
-            f"No new API requests to broadcast. Please drop your API request folder to {broadcast_app_path}."
-        )
-        return
-
-    datasites_with_inbox = [
-        d
-        for d in datasites_path.iterdir()
-        if (d / "inbox").exists() and d != my_datasite_path
-    ]
-    if len(datasites_with_inbox) == 0:
-        print("No datasites with an inbox found.")
-        return
-
-    print(
-        f"Found {len(valid_api_requests)} new API requests to broadcast to {len(datasites_with_inbox)} datasites."
-    )
-
-    for api_request in valid_api_requests:
-        for datasite in datasites_with_inbox:
-            # Copy the api_request to the datasite's inbox
-            target_path = datasite / "inbox" / api_request.name
-            shutil.copytree(api_request, target_path, dirs_exist_ok=True)
-            print(f"Broadcasted '{api_request.name}' to '{datasite.name}'")
-        # Remove the api_request from the broadcast folder
-        shutil.rmtree(api_request)

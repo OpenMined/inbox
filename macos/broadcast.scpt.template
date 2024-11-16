@@ -1,6 +1,5 @@
 on run
-	set appsDirectory to POSIX file "{{APPS_PATH}}"
-	set folderPath to choose folder with prompt "Select a folder containing an API request to broadcast" default location appsDirectory
+	set folderPath to choose folder with prompt "Select a folder containing an API request to broadcast" default location (path to me)
 	processFolder(folderPath)
 end run
 
@@ -16,8 +15,7 @@ end open
 
 on processFolder(folderPath)
 	-- Set variables
-	set datasitePath to "{{DATASITE_PATH}}"
-	set broadcastDirPath to "{{BROADCAST_DIR_PATH}}"
+	set datasitesPath to quoted form of "{{DATASITES_PATH}}"
 
 	-- Convert the folder path to POSIX format for shell compatibility
 	set folderPOSIXPath to POSIX path of folderPath
@@ -31,7 +29,7 @@ on processFolder(folderPath)
 	end if
 
 	-- Get number of datasites with inbox installed
-	set datasitesCount to do shell script "count=0; for d in " & datasitePath & "/*/; do [ -d \"$d/inbox\" ] && ((count++)); done; echo $count"
+	set datasitesCount to do shell script "count=0; for d in " & datasitesPath & "/*/; do [ -d \"$d/inbox\" ] && ((count++)); done; echo $count"
 	set datasiteLabel to "datasite"
 	if datasitesCount is greater than 1 then set datasiteLabel to "datasites"
 
@@ -41,8 +39,8 @@ on processFolder(folderPath)
 	if button returned of userResponse is "Schedule Broadcast" then
 		set folderPOSIXPathWithoutTrailingSlash to do shell script "echo " & quoted form of folderPOSIXPath & " | sed 's|/$||'"
 
-		-- Copy the folder to the broadcastDirPath location
-		do shell script "cp -R " & quoted form of folderPOSIXPathWithoutTrailingSlash & " " & quoted form of broadcastDirPath
+		-- Copy the folder to each inbox sub-directory within datasitesPath (only if inbox directory exists)
+		do shell script "for d in " & datasitesPath & "/*/inbox; do [ -d \"$d\" ] && cp -R " & quoted form of folderPOSIXPathWithoutTrailingSlash & " \"$d\"; done"
 
 		display dialog "The API request has been successfully scheduled to broadcast to " & datasitesCount & " " & datasiteLabel &". You can monitor the progress in the SyftBox logs." buttons {"OK"} default button "OK" with title "API Request Broadcasted" with icon note
 	end if

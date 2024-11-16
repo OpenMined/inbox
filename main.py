@@ -1,10 +1,8 @@
 from constants import BROADCAST_ENABLED
-from pathlib import Path
 import platform
 from syftbox.lib import Client, SyftPermission
 from utils import compile_broadcast_app
 from utils import create_symlink
-from utils import start_broadcast_service
 from utils import start_garbage_collector
 from utils import start_notification_service
 
@@ -34,27 +32,8 @@ create_symlink(trash_path, rejected_symplink_path, overwrite=True)
 start_notification_service(my_inbox_path, api_data_path)
 start_garbage_collector(trash_path, rejected_symplink_path)
 
-if BROADCAST_ENABLED and platform.system() == "Darwin":
-    broadcast_dir_path = api_data_path / ".broadcast"
-    broadcast_app_path = client.workspace.apps / "broadcast.app"
-    app_icon = Path(__file__).parent / "assets" / "icon.icns"
-
-    # Create the broadcast app at broadcast_dir_path
-    client.makedirs(broadcast_dir_path)
-
-    # Compile and add the broadcast app
-    if not broadcast_app_path.exists():
-        compile_broadcast_app(
-            broadcast_app_path,
-            my_apps_path,
-            client.datasites.absolute(),
-            broadcast_dir_path.absolute(),
-            app_icon.absolute(),
-        )
-
-    start_broadcast_service(
-        broadcast_dir_path,
-        broadcast_app_path,
-        client.datasites,
-        client.my_datasite,
-    )
+if BROADCAST_ENABLED:
+    if platform.system() == "Darwin":
+        # Compile and add the broadcast app for macOS
+        broadcast_app_path = client.workspace.apps / "broadcast.app"
+        compile_broadcast_app(broadcast_app_path, client.datasites)
