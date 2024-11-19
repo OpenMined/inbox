@@ -86,6 +86,7 @@ def create_api_request_notifications_linux(
         f" --icon '{icon_path.absolute()}'"
         f" --action 'Show:xdg-open {inbox_path.absolute()}'"
         f" --default-action 'xdg-open {inbox_path.absolute()}'"
+        "--hint=string:sound-name:message-new-email"
     )
 
 
