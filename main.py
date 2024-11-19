@@ -1,7 +1,7 @@
+import shutil
 from constants import BROADCAST_ENABLED
-import platform
+from pathlib import Path
 from syftbox.lib import Client, SyftPermission
-from utils import compile_broadcast_app
 from utils import create_symlink
 from utils import start_garbage_collector
 from utils import start_notification_service
@@ -33,7 +33,41 @@ start_notification_service(my_inbox_path, api_data_path)
 start_garbage_collector(trash_path, rejected_symplink_path)
 
 if BROADCAST_ENABLED:
-    if platform.system() == "Darwin":
-        # Compile and add the broadcast app for macOS
-        broadcast_app_path = client.workspace.apps / "broadcast.app"
-        compile_broadcast_app(broadcast_app_path, client.datasites)
+    try:
+        broadcast_app_src = Path(__file__).parent / "broadcast"
+        broadcast_app_dst = my_apps_path / "broadcast"
+
+        # Ensure source directory exists
+        if not broadcast_app_src.exists():
+            raise FileNotFoundError(
+                f"Broadcast source directory not found: {broadcast_app_src}"
+            )
+
+        # Compare versions only if both files exist
+        needs_update = True
+        if broadcast_app_dst.exists():
+            try:
+                src_version = (broadcast_app_src / "version").read_text().strip()
+                dst_version = (broadcast_app_dst / "version").read_text().strip()
+                needs_update = src_version != dst_version
+            except (FileNotFoundError, IOError) as e:
+                print(f"Warning: Broadcast app version check failed - {e}")
+
+        if needs_update:
+            print("Updating broadcast app")
+            shutil.copytree(
+                broadcast_app_src,
+                broadcast_app_dst,
+                dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns(
+                    "__pycache__",
+                    ".pytest_cache",
+                    ".venv",
+                    "*.pyc",
+                    ".git",
+                ),
+            )
+            print("Broadcast app updated successfully")
+
+    except Exception as e:
+        print(f"Error updating broadcast app: {e}")

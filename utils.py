@@ -61,7 +61,7 @@ def create_symlink(target_path: Path, symlink_path: Path, overwrite=False) -> No
 
 
 def is_valid_api_request(path: Path) -> bool:
-    return path.is_dir() and "run.sh" in [f.name for f in path.iterdir()]
+    return path.is_dir() and (path / "run.sh").exists()
 
 
 def create_api_request_notifications_macos(
