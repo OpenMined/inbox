@@ -52,11 +52,11 @@ def human_friendly_join(
 
 
 def create_symlink(target_path: Path, symlink_path: Path, overwrite=False) -> None:
-    if overwrite and symlink_path.exists(follow_symlinks=False):
-        if os.path.islink(symlink_path):
+    if overwrite:
+        if symlink_path.is_symlink() or symlink_path.is_file():
             os.unlink(symlink_path)
         else:
-            shutil.rmtree(symlink_path)
+            shutil.rmtree(symlink_path, ignore_errors=True)
     symlink_path.symlink_to(target_path)
 
 
