@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Request Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header img {
+            width: 100px;
+            height: auto;
+        }
+
+        .content {
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #888888;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{logo_url}}" alt="SyftBox Icon">
+        </div>
+        <div class="content">
+            <p>Hello {{recipient_name}},</p>
+            <p>You've received a new API request called <strong>{{api_request_name}}</strong> in your datasite from
+                <strong>{{sender_email}}</strong>.
+            </p>
+            <p><strong>Action Item:</strong>
+            <ul>
+                <li>Review <strong>{{api_request_name}}</strong>'s API code by opening
+                    <code>SyftBox/datasites/<a rel="nofollow">{{recipient_email}}</a>/inbox/</code>.
+                </li>
+                <li>Move <strong>{{api_request_name}}</strong>'s request to Approved or Rejected folder under inbox
+                    appropriately.
+                </li>
+            </ul>
+            </p>
+            <p>If you have any questions, please join our <a
+                    href="https://openmined.slack.com/archives/C6EEFN3A8">#support</a> channel.</p>
+        </div>
+        <div class="footer">
+            Received from Inbox App
+        </div>
+    </div>
+</body>
+
+</html>
