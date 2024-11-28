@@ -22,8 +22,7 @@ MAX_EMAIL_RETRIES = 3
 EMAIL_API_URL = "https://syftbox.openmined.org/emails/"
 EMAIL_SUBJECT = "SyftBox: New API request received ({api_request_name})"
 EMAIL_TEMPLATE = Path(__file__).parent / "email_template.html"
-# TODO change this to point to syftbox prod once it's live
-SYFTBOX_LOGO_URL = "https://syftboxstage.openmined.org/icon.png"
+SYFTBOX_LOGO_URL = "https://syftbox.openmined.org/icon.png"
 
 
 @dataclass
