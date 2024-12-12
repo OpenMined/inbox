@@ -1,10 +1,11 @@
 import shutil
-from constants import BROADCAST_ENABLED
 from pathlib import Path
+
 from syftbox.lib import Client, SyftPermission
-from utils import create_symlink
-from utils import start_garbage_collector
-from utils import start_notification_service
+from syftbox.lib.constants import PERM_FILE
+
+from constants import BROADCAST_ENABLED
+from utils import create_symlink, start_garbage_collector, start_notification_service
 
 client = Client.load()
 
@@ -20,8 +21,12 @@ rejected_symplink_path = my_inbox_path / "rejected"
 client.makedirs(my_inbox_path, trash_path)
 
 # Make the inbox path globally writeable
-permission = SyftPermission.mine_with_public_write(email=client.email)
-permission.ensure(path=my_inbox_path)
+permission_file = my_inbox_path / PERM_FILE
+permission = SyftPermission.mine_with_public_write(
+    email=client.email,
+    filepath=permission_file.relative_to(client.datasites),
+)
+permission.ensure(path=permission_file)
 
 # Create a symlink called "approved" in inbox, pointing to the apps folder
 create_symlink(my_apps_path, approved_symlink_path, overwrite=True)
