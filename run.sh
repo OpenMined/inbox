@@ -3,7 +3,7 @@ set -e
 
 if [ ! -d ".venv" ]; then
     echo "Virtual environment not found. Creating one..."
-    uv venv .venv
+    uv venv -p 3.12 .venv
     echo "Virtual environment created successfully."
 else
     echo "Virtual environment already exists."
