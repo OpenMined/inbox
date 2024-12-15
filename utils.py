@@ -8,7 +8,7 @@ from pathlib import Path
 import platform
 import shutil
 
-
+from syftbox.lib.constants import PERM_FILE
 def human_friendly_join(
     items: list[str], sep: str = ", ", last_sep: str = " and "
 ) -> str:
@@ -112,7 +112,7 @@ def create_api_request_notifications(*api_requests: Path, inbox_path: Path) -> N
 
 
 def get_pending_api_requests(inbox_path: Path) -> list:
-    ignore = [".DS_Store", "rejected", "_.syftperm", "approved"]
+    ignore = [".DS_Store", "rejected", "_.syftperm", "approved", PERM_FILE]
     pending_api_requests = [
         d.name
         for d in inbox_path.iterdir()
