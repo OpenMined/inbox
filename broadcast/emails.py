@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(f"{api_name}:{Path(__file__).name}")
 
 api_data_dir = client.api_data()
+api_data_dir.mkdir(parents=True, exist_ok=True)
 email_queue_json = api_data_dir / "email_queue.json"
 
 MAX_EMAIL_RETRIES = 3
