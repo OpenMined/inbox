@@ -10,8 +10,8 @@ client = Client.load()
 
 my_inbox_path = client.my_datasite / "inbox"
 my_apps_path = client.workspace.apps
-api_data_path = client.api_data("inbox")
-trash_path = api_data_path / ".trash"
+app_data_path = client.app_data("inbox")
+trash_path = app_data_path / ".trash"
 
 approved_symlink_path = my_inbox_path / "approved"
 rejected_symplink_path = my_inbox_path / "rejected"
@@ -32,7 +32,7 @@ create_symlink(my_apps_path, approved_symlink_path, overwrite=True)
 # Create a symlink called "rejected" in inbox, pointing to the trash folder
 create_symlink(trash_path, rejected_symplink_path, overwrite=True)
 
-start_notification_service(my_inbox_path, api_data_path)
+start_notification_service(my_inbox_path, app_data_path)
 start_garbage_collector(trash_path, rejected_symplink_path)
 
 if BROADCAST_ENABLED:
