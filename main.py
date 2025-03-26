@@ -1,8 +1,8 @@
 import shutil
 from pathlib import Path
 
-from syftbox.lib import Client, SyftPermission
-
+from syft_core import Client
+from syft_core.permissions import SyftPermission
 from constants import BROADCAST_ENABLED
 from utils import create_symlink, start_garbage_collector, start_notification_service
 
