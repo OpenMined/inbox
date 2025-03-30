@@ -4,7 +4,7 @@ from typing import Any
 import logging
 from pathlib import Path
 from dataclasses import dataclass
-from syftbox.lib import Client
+from syft_core import Client
 
 
 # Set up SyftBox client
