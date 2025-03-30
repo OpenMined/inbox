@@ -8,7 +8,8 @@ from pathlib import Path
 import platform
 import shutil
 
-from syftbox.lib.constants import PERM_FILE
+from syft_core.permissions import PERM_FILE
+
 def human_friendly_join(
     items: list[str], sep: str = ", ", last_sep: str = " and "
 ) -> str:

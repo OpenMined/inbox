@@ -1,7 +1,7 @@
 import shutil
 import logging
 from pathlib import Path
-from syftbox.lib import Client
+from syft_core import Client
 from emails import EmailService
 
 
