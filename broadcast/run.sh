@@ -7,7 +7,7 @@ uv pip install -U syft-core httpx
 
 while true; do
     echo "Running 'broadcast' with $(python3 --version) at '$(which python3)'"
-    uv run python3 main.py
+    python3 main.py
 
     echo "Sleeping for 10 seconds..."
     sleep 10
